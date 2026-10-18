@@ -1,26 +1,18 @@
 import mysql.connector
 from mysql.connector import Error, IntegrityError
 from decimal import Decimal, InvalidOperation
-
-# CHANGE this password to the one you use for MySQL.
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "piyush+-*/",
+    "password": "YOUR PASSWORD",
     "database": "banking_system",
 }
 
 MAX_ACCOUNTS = 100
-
-
 def connect_db():
     return mysql.connector.connect(**DB_CONFIG)
-
-
 def setup_database():
     """Create the database and table if they do not exist."""
-    # First connect without selecting a database, so this works even if
-    # banking_system has not been created yet.
     config = DB_CONFIG.copy()
     config.pop("database", None)
     conn = mysql.connector.connect(**config)
@@ -50,13 +42,9 @@ def setup_database():
     finally:
         cur.close()
         conn.close()
-
-
 def get_count(cur):
     cur.execute("SELECT COUNT(*) FROM accounts")
     return cur.fetchone()[0]
-
-
 def find_account(cur, account_number):
     cur.execute(
         "SELECT account_number, customer_name, balance "
@@ -64,8 +52,6 @@ def find_account(cur, account_number):
         (account_number,),
     )
     return cur.fetchone()
-
-
 def input_account_number(prompt):
     try:
         number = int(input(prompt).strip())
@@ -75,8 +61,6 @@ def input_account_number(prompt):
     except ValueError:
         print("\nInvalid account number. Enter a positive whole number.")
         return None
-
-
 def input_amount(prompt):
     try:
         amount = Decimal(input(prompt).strip())
@@ -87,25 +71,20 @@ def input_amount(prompt):
     except (InvalidOperation, ValueError):
         print("\nInvalid amount. Enter a valid number, for example 250.00.")
         return None
-
-
 def create_account():
     name = input("\nEnter customer name: ").strip()
     if not name:
         print("\nCustomer name cannot be empty!")
         return
-
     amount = input_amount("Enter initial amount to be deposited: ")
     if amount is None:
         return
     if amount < 0:
         print("\nInvalid amount!")
         return
-
     number = input_account_number("Enter account number: ")
     if number is None:
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -128,8 +107,6 @@ def create_account():
     finally:
         cur.close()
         conn.close()
-
-
 def deposit_money():
     number = input_account_number("\nEnter account number: ")
     if number is None:
@@ -140,7 +117,6 @@ def deposit_money():
     if amount <= 0:
         print("\nInvalid amount!")
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -162,8 +138,6 @@ def deposit_money():
     finally:
         cur.close()
         conn.close()
-
-
 def withdraw_money():
     number = input_account_number("\nEnter account number: ")
     if number is None:
@@ -174,11 +148,9 @@ def withdraw_money():
     if amount <= 0:
         print("\nInvalid amount!")
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
-        # Conditional update prevents the balance going below zero.
         cur.execute(
             "UPDATE accounts SET balance = balance - %s "
             "WHERE account_number = %s AND balance >= %s",
@@ -200,8 +172,6 @@ def withdraw_money():
     finally:
         cur.close()
         conn.close()
-
-
 def transfer_money():
     sender = input_account_number("\nEnter sender's account number: ")
     if sender is None:
@@ -212,18 +182,15 @@ def transfer_money():
     amount = input_amount("Enter amount to transfer: ")
     if amount is None:
         return
-
     if sender == receiver:
         print("\nSender and receiver cannot be same!")
         return
     if amount <= 0:
         print("\nInvalid amount! Please enter a valid amount.")
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
-        # Lock accounts and update both within one database transaction.
         ordered = sorted((sender, receiver))
         cur.execute(
             "SELECT account_number, balance FROM accounts "
@@ -246,7 +213,6 @@ def transfer_money():
             conn.rollback()
             print("\nInsufficient Balance!")
             return
-
         cur.execute(
             "UPDATE accounts SET balance = balance - %s "
             "WHERE account_number = %s",
@@ -269,13 +235,10 @@ def transfer_money():
     finally:
         cur.close()
         conn.close()
-
-
 def display_account():
     number = input_account_number("\nEnter account number: ")
     if number is None:
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -291,8 +254,6 @@ def display_account():
     finally:
         cur.close()
         conn.close()
-
-
 def display_all_accounts():
     conn = connect_db()
     cur = conn.cursor()
@@ -305,7 +266,6 @@ def display_all_accounts():
         if not accounts:
             print("\nNo accounts available!")
             return
-
         print("\n========== ALL ACCOUNTS ==========")
         for index, account in enumerate(accounts, start=1):
             print(f"\nAccount {index}")
@@ -317,20 +277,16 @@ def display_all_accounts():
     finally:
         cur.close()
         conn.close()
-
-
 def delete_account():
     number = input_account_number("\nEnter account number to delete: ")
     if number is None:
         return
-
     confirm = input(
         "Delete this account permanently? Type YES to confirm: "
     ).strip()
     if confirm != "YES":
         print("Deletion cancelled.")
         return
-
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -349,8 +305,6 @@ def delete_account():
     finally:
         cur.close()
         conn.close()
-
-
 def main():
     try:
         setup_database()
@@ -395,7 +349,5 @@ def main():
         print("Check DB_CONFIG password and confirm MySQL Server is running.")
     except (EOFError, KeyboardInterrupt):
         print("\n\nProgram closed.")
-
-
 if __name__ == "__main__":
     main()
